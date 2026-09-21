@@ -20,10 +20,28 @@ export function AnkiFieldContextProvider(props: {
   noteId?: number;
   isRoot?: boolean;
 }) {
+  // 1. Check for a global session override
+  const override = sessionStorage.getItem("kiku-session-override");
+  const modifiedFields = { ...props.initialAnkiFields };
+
+  // 2. If an override is set, force the fields for this card
+  if (override && override !== "none") {
+    modifiedFields.IsWordAndSentenceCard = "";
+    modifiedFields.IsClickCard = "";
+    modifiedFields.IsSentenceCard = "";
+    modifiedFields.IsAudioCard = "";
+
+    if (override === "IsWordAndSentenceCard") modifiedFields.IsWordAndSentenceCard = "1";
+    else if (override === "IsClickCard") modifiedFields.IsClickCard = "1";
+    else if (override === "IsSentenceCard") modifiedFields.IsSentenceCard = "1";
+    else if (override === "IsAudioCard") modifiedFields.IsAudioCard = "1";
+  }
+
   const [$ankiFields, $setAnkiFields] = createStore<AnkiFields>({
-    ...props.initialAnkiFields,
+    ...modifiedFields,
     __IS_ROOT__: props.isRoot ?? false,
   });
+
   const $isRootAnkiFields = createMemo(() => Boolean($ankiFields.__IS_ROOT__));
   const $isInitialAnkiFields = createMemo(
     () => $ankiFields.CardID === props.initialAnkiFields.CardID,
@@ -31,7 +49,7 @@ export function AnkiFieldContextProvider(props: {
   const $isRootInitialAnkiFields = createMemo(() => Boolean(props.initialAnkiFields.__IS_ROOT__));
 
   const resetAnkiFields = () => {
-    $setAnkiFields({ ...props.initialAnkiFields, __IS_ROOT__: props.isRoot });
+    $setAnkiFields({ ...modifiedFields, __IS_ROOT__: props.isRoot });
   };
 
   return (

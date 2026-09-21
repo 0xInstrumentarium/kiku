@@ -42,6 +42,7 @@ import {
   RangeSetting,
   SelectSetting,
   KeybindInput,
+  SessionCardTypeSelector,
   type NumStrConfigKey,
 } from "./SettingsForm";
 import { getTemplatePreview } from "#/src/lazy/lib/template";
@@ -251,6 +252,9 @@ function GeneralSettings() {
       </Show>
       <SectionTitle>General</SectionTitle>
       <div class="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] sm:grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] rounded-box gap-2 sm:gap-4">
+        
+        <SessionCardTypeSelector/>
+        
         <ToggleSetting configKey="blurNsfw" label="Blur NSFW" />
         <ToggleSetting configKey="pictureOnFront" label="Picture on Front" />
         <ToggleSetting

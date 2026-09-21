@@ -3,6 +3,7 @@ import type { KikuConfig } from "#/src/lib/config";
 import { defaultConfig } from "#/src/lib/default-config";
 import { useConfigContext } from "#/src/contexts/ConfigContext";
 import { Dot, InfoIcon, UndoIcon } from "./Icons";
+import { useAnkiFieldContext } from "#/src/contexts/AnkiFieldsContext";
 
 export type BoolConfigKey = {
   [K in keyof KikuConfig]: KikuConfig[K] extends boolean ? K : never;
@@ -221,6 +222,67 @@ export function KeybindInput(props: { label: string; configKey: StringConfigKey 
       >
         {$isRecording() ? "Press any key..." : ($config[props.configKey] as string)}
       </button>
+    </fieldset>
+  );
+}
+
+export function SessionCardTypeSelector() {
+  const { $setAnkiFields, initialAnkiFields } = useAnkiFieldContext();
+  const [$override, setOverride] = createSignal(
+    sessionStorage.getItem("kiku-session-override") || "none"
+  );
+
+  const CARD_TYPES = [
+    { id: "none", label: "None (Use Card's Default)" },
+    { id: "Default", label: "Word" },
+    { id: "IsWordAndSentenceCard", label: "Word & Sentence" },
+    { id: "IsClickCard", label: "Click" },
+    { id: "IsSentenceCard", label: "Sentence" },
+    { id: "IsAudioCard", label: "Audio" },
+  ] as const;
+
+  const handleChange = (e: Event) => {
+    const val = (e.target as HTMLSelectElement).value;
+    
+    // 1. Save to session storage for all upcoming cards
+    setOverride(val);
+    sessionStorage.setItem("kiku-session-override", val);
+
+    // 2. Instantly update the current card you are looking at
+    if (val === "none") {
+      // Revert to whatever this specific card has in the database
+      $setAnkiFields({
+        IsWordAndSentenceCard: initialAnkiFields.IsWordAndSentenceCard || "",
+        IsClickCard: initialAnkiFields.IsClickCard || "",
+        IsSentenceCard: initialAnkiFields.IsSentenceCard || "",
+        IsAudioCard: initialAnkiFields.IsAudioCard || "",
+      });
+    } else {
+      // Apply the override directly to the current card
+      $setAnkiFields({
+        IsWordAndSentenceCard: val === "IsWordAndSentenceCard" ? "1" : "",
+        IsClickCard: val === "IsClickCard" ? "1" : "",
+        IsSentenceCard: val === "IsSentenceCard" ? "1" : "",
+        IsAudioCard: val === "IsAudioCard" ? "1" : "",
+      });
+    }
+  };
+
+  return (
+    <fieldset class="fieldset py-0">
+      <legend class="fieldset-legend">Session Card Override</legend>
+      <select
+        class="select w-full"
+        value={$override()}
+        on:change={handleChange}
+      >
+        <For each={CARD_TYPES}>
+          {(type) => <option value={type.id}>{type.label}</option>}
+        </For>
+      </select>
+      <div class="fieldset-label text-xs opacity-70">
+        Forces this layout for all cards. Resets when restarting Anki.
+      </div>
     </fieldset>
   );
 }
